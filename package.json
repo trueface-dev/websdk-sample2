@@ -1,0 +1,13 @@
+{
+  "name": "trueface-web-sdk-sample-2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sample site loading the hosted TrueFace Web SDK from the CDN with a fully custom UI theme",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

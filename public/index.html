@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrueFace SDK — Hosted Build, Custom Theme</title>
+
+<!--
+  The hosted SDK, exactly as a merchant would load it. Version is injected by
+  the server from TRUEFACE_SDK_VERSION so this page and the backend agree.
+
+  Note what is NOT here: trueface-web-sdk.css. theme.css restyles the SDK's
+  own DOM from scratch instead.
+-->
+<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/page.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <span class="wordmark">Sample Merchant</span>
+    <span class="masthead-note">Account verification</span>
+  </div>
+</header>
+
+<main class="shell">
+
+  <section class="pane pane-context">
+    <h1>Verify your identity</h1>
+    <p class="lede">
+      A short liveness check confirms a real person is present. It takes about
+      twenty seconds and the recording never leaves the verification service.
+    </p>
+
+    <dl class="facts">
+      <div><dt>SDK</dt><dd id="fact-sdk">loading…</dd></div>
+      <div><dt>Stylesheet</dt><dd>theme.css (SDK CSS not loaded)</dd></div>
+      <div><dt>Mode</dt><dd id="fact-mode">checking…</dd></div>
+    </dl>
+
+    <div class="controls">
+      <label class="field">
+        <span>Challenges</span>
+        <select id="challenge-count">
+          <option value="">Server default</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+        </select>
+      </label>
+      <button id="start" class="btn-primary" disabled>Begin verification</button>
+    </div>
+
+    <details class="manual">
+      <summary>Use an existing session</summary>
+      <p class="manual-hint">
+        For when the secret key is not configured here. Paste the values from a
+        verification you created elsewhere.
+      </p>
+      <label class="field"><span>Verification ID</span><input id="m-vid" placeholder="aa8e89d8-…" autocomplete="off"></label>
+      <label class="field"><span>Client secret</span><input id="m-secret" placeholder="cs_…" autocomplete="off"></label>
+      <label class="field"><span>Publishable key</span><input id="m-pk" placeholder="pk_test_…" autocomplete="off"></label>
+      <button id="start-manual" class="btn-secondary">Begin with these</button>
+    </details>
+  </section>
+
+  <section class="pane pane-stage">
+    <!-- The SDK mounts here and adds .trueface-container to this element. -->
+    <div id="tf-mount"></div>
+    <p class="stage-caption" id="stage-caption">Press <em>Begin verification</em> to start the camera.</p>
+  </section>
+
+</main>
+
+<section class="shell shell-lower">
+  <div class="pane pane-result">
+    <h2>Result</h2>
+    <p class="result-hint">
+      Read back from the API with the secret key — the authoritative outcome,
+      not the browser's copy.
+    </p>
+    <pre id="result">—</pre>
+  </div>
+  <div class="pane pane-log">
+    <h2>Activity</h2>
+    <div id="log" class="log"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <span id="footer-sdk">—</span>
+</footer>
+
+<!-- boot.js reads /api/config, then injects the hosted SDK <script> so the
+     pinned version lives in one place: the server's TRUEFACE_SDK_VERSION. -->
+<script src="/boot.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

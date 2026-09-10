@@ -1,0 +1,444 @@
+/*
+ * Custom theme for the TrueFace Web SDK.
+ *
+ * `trueface-web-sdk.css` is NOT loaded by this page. Everything below is
+ * written from scratch against the class names the SDK puts on its own DOM,
+ * so this file has to supply layout as well as colour — including the video
+ * mirroring and `object-fit`, which the stock stylesheet would otherwise
+ * handle.
+ *
+ * The SDK sets only two inline styles: `display:flex` on .trueface-overlay,
+ * and the width percentage on .trueface-progress-bar. Everything here is
+ * positioned absolutely, so that flex declaration is harmless.
+ *
+ * DOM the SDK builds:
+ *   .trueface-container            (the element you pass to start())
+ *     .trueface-overlay
+ *       .trueface-viewport
+ *         video.trueface-video
+ *         .trueface-oval-guide     + .valid / .action / .error
+ *           .trueface-scanner-line
+ *       .trueface-guidance-panel
+ *         .trueface-step-badge
+ *         p.trueface-prompt
+ *         .trueface-progress-wrapper
+ *           .trueface-progress-bar
+ *     .trueface-instructions-card  (before the session starts)
+ *     .trueface-processing-card    (during upload)
+ *     .trueface-outcome-card       (final result)
+ *     .trueface-error-banner       (transient)
+ */
+
+:root {
+  --tf-paper: #faf8f5;
+  --tf-paper-sunk: #f1ece4;
+  --tf-ink: #1a1714;
+  --tf-ink-soft: #6b625a;
+  --tf-rule: #ddd6cc;
+  --tf-accent: #145239;
+  --tf-accent-soft: rgba(20, 82, 57, 0.09);
+  --tf-danger: #9b2c2c;
+  --tf-serif: ui-serif, Georgia, "Times New Roman", serif;
+  --tf-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* --- Frame ---------------------------------------------------------------- */
+
+.trueface-container {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 540px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--tf-ink);
+  border: 1px solid var(--tf-rule);
+  box-shadow: 0 1px 2px rgba(26, 23, 20, 0.06), 0 12px 28px -18px rgba(26, 23, 20, 0.4);
+  font-family: var(--tf-sans);
+}
+
+/* The SDK sets `display:flex` inline here, so lay the overlay out as a column
+   and let the camera and the prompt panel each take their own band. Anchoring
+   the panel over the video instead would cover the subject's chin. */
+.trueface-overlay {
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- Camera -------------------------------------------------------------- */
+
+.trueface-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #000;
+}
+
+.trueface-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The stock stylesheet mirrors the preview; without this the user's own
+     movements read backwards. */
+  transform: scaleX(-1);
+}
+
+/* --- Face target --------------------------------------------------------- */
+
+/* A bracketed rounded rectangle rather than the stock dashed ellipse. The
+   huge box-shadow spread is what dims everything outside the target. */
+.trueface-oval-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(70vw, 250px);
+  height: min(92vw, 330px);
+  border: 1.5px solid rgba(250, 248, 245, 0.5);
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: 0 0 0 9999px rgba(26, 23, 20, 0.74);
+  pointer-events: none;
+  overflow: visible;
+  z-index: 10;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Corner brackets, drawn outside the frame. */
+.trueface-oval-guide::before,
+.trueface-oval-guide::after {
+  content: '';
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-color: var(--tf-paper);
+  border-style: solid;
+  transition: border-color 0.25s ease;
+}
+
+.trueface-oval-guide::before {
+  top: -7px;
+  left: -7px;
+  border-width: 2px 0 0 2px;
+  border-radius: 4px 0 0 0;
+}
+
+.trueface-oval-guide::after {
+  right: -7px;
+  bottom: -7px;
+  border-width: 0 2px 2px 0;
+  border-radius: 0 0 4px 0;
+}
+
+.trueface-oval-guide.valid,
+.trueface-oval-guide.action {
+  border-color: rgba(250, 248, 245, 0.85);
+  box-shadow: 0 0 0 9999px rgba(26, 23, 20, 0.74), 0 0 0 1px var(--tf-accent);
+}
+
+.trueface-oval-guide.valid::before,
+.trueface-oval-guide.valid::after,
+.trueface-oval-guide.action::before,
+.trueface-oval-guide.action::after {
+  border-color: #6ee7b7;
+}
+
+.trueface-oval-guide.error {
+  border-color: rgba(255, 210, 210, 0.9);
+  box-shadow: 0 0 0 9999px rgba(38, 16, 16, 0.8);
+}
+
+.trueface-oval-guide.error::before,
+.trueface-oval-guide.error::after {
+  border-color: #fca5a5;
+}
+
+/* The stock theme sweeps a scanning line across the target. Removed here, to
+   show that SDK chrome can be dropped and not just recoloured. */
+.trueface-scanner-line {
+  display: none;
+}
+
+/* --- Guidance panel: anchored to the bottom, not the top ----------------- */
+
+.trueface-guidance-panel {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 12px 16px 13px;
+  background: var(--tf-paper);
+  border-top: 1px solid var(--tf-rule);
+  text-align: left;
+}
+
+.trueface-step-badge {
+  font-family: var(--tf-sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tf-accent);
+  background: var(--tf-accent-soft);
+  border: 1px solid rgba(20, 82, 57, 0.2);
+  border-radius: 3px;
+  padding: 3px 7px;
+}
+
+.trueface-prompt {
+  margin: 0;
+  font-family: var(--tf-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--tf-ink);
+}
+
+.trueface-progress-wrapper {
+  width: 100%;
+  height: 3px;
+  margin-top: 4px;
+  background: var(--tf-paper-sunk);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.trueface-progress-bar {
+  height: 100%;
+  background: var(--tf-accent);
+  transition: width 0.3s ease;
+}
+
+/* --- Transient error ----------------------------------------------------- */
+
+.trueface-error-banner {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 100;
+  padding: 10px 13px;
+  border-radius: 4px;
+  background: var(--tf-paper);
+  border: 1px solid var(--tf-danger);
+  border-left-width: 3px;
+  color: var(--tf-danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  animation: tf-drop 0.22s ease-out;
+}
+
+@keyframes tf-drop {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* --- Full-cover cards ---------------------------------------------------- */
+
+.trueface-instructions-card,
+.trueface-processing-card,
+.trueface-outcome-card {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--tf-paper);
+  animation: tf-rise 0.25s ease-out;
+}
+
+@keyframes tf-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pre-session instructions */
+.trueface-instructions-card {
+  z-index: 70;
+  justify-content: space-between;
+  padding: 28px 24px 22px;
+}
+
+.trueface-instructions-header {
+  text-align: left;
+  width: 100%;
+}
+
+.trueface-instructions-title {
+  margin: 0 0 5px;
+  font-family: var(--tf-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--tf-ink);
+}
+
+.trueface-instructions-sub {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--tf-ink-soft);
+}
+
+.trueface-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  margin: 18px 0;
+  border-top: 1px solid var(--tf-rule);
+}
+
+/* Rules between rows instead of the stock separate cards. */
+.trueface-tip-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 2px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--tf-rule);
+}
+
+.trueface-tip-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  filter: grayscale(1);
+  opacity: 0.75;
+}
+
+.trueface-tip-text-title {
+  margin: 0 0 1px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tf-ink);
+}
+
+.trueface-tip-text-sub {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--tf-ink-soft);
+}
+
+.trueface-start-btn {
+  width: 100%;
+  padding: 12px 18px;
+  background: var(--tf-accent);
+  color: var(--tf-paper);
+  border: 0;
+  border-radius: 4px;
+  font-family: var(--tf-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.18s ease;
+}
+
+.trueface-start-btn:hover {
+  background: #0e3d2b;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Upload / processing */
+.trueface-processing-card {
+  z-index: 50;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 26px;
+}
+
+.trueface-spinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--tf-rule);
+  border-top-color: var(--tf-accent);
+  border-radius: 50%;
+  animation: tf-spin 0.7s linear infinite;
+}
+
+@keyframes tf-spin {
+  to { transform: rotate(360deg); }
+}
+
+.trueface-processing-title {
+  margin: 0;
+  font-family: var(--tf-serif);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--tf-ink);
+}
+
+.trueface-processing-sub {
+  margin: 0;
+  max-width: 260px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--tf-ink-soft);
+}
+
+/* Final outcome */
+.trueface-outcome-card {
+  z-index: 60;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 26px;
+}
+
+.trueface-outcome-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.trueface-outcome-icon.valid {
+  background: var(--tf-accent-soft);
+  border: 1px solid rgba(20, 82, 57, 0.3);
+  color: var(--tf-accent);
+  box-shadow: none;
+}
+
+.trueface-outcome-icon.error {
+  background: rgba(155, 44, 44, 0.08);
+  border: 1px solid rgba(155, 44, 44, 0.3);
+  color: var(--tf-danger);
+  box-shadow: none;
+}
+
+.trueface-outcome-title {
+  margin: 0;
+  font-family: var(--tf-serif);
+  font-size: 1.22rem;
+  font-weight: 400;
+  text-align: center;
+  color: var(--tf-ink);
+}
+
+.trueface-outcome-sub {
+  margin: 0;
+  max-width: 280px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--tf-ink-soft);
+}
